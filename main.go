@@ -28,6 +28,10 @@ func main() {
 	e := echo.New()
 
 	e.GET("/entries", app.GetEntries)
+	e.POST("/entry/complete", app.CompleteEntry)
+	e.POST("/entry", app.InsertEntry)
+	e.PUT("/entry", app.UpdateEntry)
+	e.DELETE("/entry", app.DeleteEntry)
 
 	e.Logger.Fatal(e.Start(":9001"))
 }
