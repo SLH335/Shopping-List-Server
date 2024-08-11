@@ -1,0 +1,8 @@
+# Output dir
+tmp/
+
+# Database
+app.db
+
+# Env file
+.env
