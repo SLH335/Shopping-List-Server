@@ -27,7 +27,7 @@ func main() {
 	e := echo.New()
 
 	e.POST("/auth/register", server.Register)
-	e.GET("/auth/login", server.Login)
+	e.POST("/auth/login", server.Login)
 
 	e.GET("/entries", server.GetEntries)
 	e.POST("/entry/complete", server.CompleteEntry)
