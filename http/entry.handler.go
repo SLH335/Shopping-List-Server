@@ -64,7 +64,7 @@ func (server *Server) CompleteEntry(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
-			Message: "error: failed to create entry",
+			Message: "error: failed to complete entry",
 		})
 	}
 	if !updated {
@@ -110,18 +110,11 @@ func (server *Server) AddEntry(c echo.Context) error {
 		})
 	}
 
-	id, err := server.EntryService.Insert(listId, text, category)
+	entry, err := server.EntryService.Add(listId, text, category)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
 			Message: "error: failed to create entry",
-		})
-	}
-	entry, err := server.EntryService.Get(id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{
-			Success: false,
-			Message: "error: failed to load entry",
 		})
 	}
 	return c.JSON(http.StatusOK, Response{Success: true, Data: entry})
@@ -203,16 +196,8 @@ func (server *Server) DeleteEntry(c echo.Context) error {
 			Message: fmt.Sprintf("error: entry %d does not exist", id),
 		})
 	}
-	entry, err := server.EntryService.Get(id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{
-			Success: false,
-			Message: "error: failed to load entry",
-		})
-	}
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: fmt.Sprintf("successfully deleted entry %d", id),
-		Data:    entry,
 	})
 }

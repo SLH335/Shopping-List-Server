@@ -17,7 +17,6 @@ func (server *Server) GetLists(c echo.Context) error {
 
 	lists, err := server.ListService.All(user.Id)
 	if err != nil {
-		fmt.Println(err)
 		return c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
 			Message: "error: failed to load lists",

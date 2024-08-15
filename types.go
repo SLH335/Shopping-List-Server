@@ -12,11 +12,12 @@ type List struct {
 }
 
 type Entry struct {
-	Id        int    `json:"id"`
-	ListId    int    `json:"listId"`
-	Text      string `json:"text"`
-	Category  string `json:"category"`
-	Completed bool   `json:"completed"`
+	Id        int       `json:"id"`
+	ListId    int       `json:"listId"`
+	Text      string    `json:"text"`
+	Category  string    `json:"category"`
+	Completed bool      `json:"completed"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type User struct {
@@ -38,7 +39,7 @@ type Session struct {
 }
 
 type Response struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	Data    any    `json:"data"`
+	Success bool   `json:"success,omitempty"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
 }
