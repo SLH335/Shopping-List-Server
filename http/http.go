@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	. "github.com/slh335/shoppinglistserver"
@@ -45,16 +46,16 @@ func getFormValues(c echo.Context, keys ...string) (values []string, successs bo
 	return values, true, nil
 }
 
-func verifySession(c echo.Context, server *Server) (success bool, err error) {
-	sessionToken := c.FormValue("session_token")
+func verifySession(c echo.Context, server *Server) (user User, success bool, err error) {
+	sessionToken := strings.Replace(c.Request().Header.Get("Authorization"), "Bearer ", "", 1)
 
-	_, err = server.AuthService.VerifySession(sessionToken)
+	user, err = server.AuthService.VerifySession(sessionToken)
 	if err != nil {
 		err = c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Message: "error: invalid credentials",
 		})
-		return false, err
+		return User{}, false, err
 	}
-	return true, nil
+	return user, true, nil
 }

@@ -11,37 +11,50 @@ import (
 )
 
 func (server *Server) GetEntries(c echo.Context) error {
-	success, err := verifySession(c, server)
+	_, success, err := verifySession(c, server)
 	if !success {
 		return err
 	}
 
-	entries, success, err := getAllEntries(server, c)
-	if !success {
-		return err
+	listIdStr := c.Param("id")
+	listId, err := strconv.Atoi(listIdStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: fmt.Sprintf("error: path parameter '%s' must be a valid integer", listIdStr),
+		})
+	}
+
+	entries, err := server.EntryService.All(listId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to load entries",
+		})
 	}
 	return c.JSON(http.StatusOK, Response{Success: true, Data: entries})
 }
 
 func (server *Server) CompleteEntry(c echo.Context) error {
-	success, err := verifySession(c, server)
+	_, success, err := verifySession(c, server)
 	if !success {
 		return err
 	}
 
-	values, success, err := getFormValues(c, "id", "completed")
-	if !success {
-		return err
-	}
-	idStr, completedStr := values[0], values[1]
-
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Response{
 			Success: false,
-			Message: "error: field 'id' must be a valid integer",
+			Message: fmt.Sprintf("error: path parameter '%s' must be a valid integer", idStr),
 		})
 	}
+
+	values, success, err := getFormValues(c, "completed")
+	if !success {
+		return err
+	}
+	completedStr := values[0]
 	completed := true
 	if strings.ToLower(completedStr) == "false" {
 		completed = false
@@ -64,21 +77,69 @@ func (server *Server) CompleteEntry(c echo.Context) error {
 	if !completed {
 		status = "uncomplete"
 	}
-	entries, success, err := getAllEntries(server, c)
-	if !success {
-		return err
+	entry, err := server.EntryService.Get(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to load entry",
+		})
 	}
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: fmt.Sprintf("successfully marked entry %d as %s", id, status),
-		Data:    entries,
+		Data:    entry,
 	})
 }
 
-func (server *Server) InsertEntry(c echo.Context) error {
-	success, err := verifySession(c, server)
+func (server *Server) AddEntry(c echo.Context) error {
+	_, success, err := verifySession(c, server)
 	if !success {
 		return err
+	}
+
+	values, success, err := getFormValues(c, "list_id", "text", "category")
+	if !success {
+		return err
+	}
+	listIdStr, text, category := values[0], values[1], values[2]
+	listId, err := strconv.Atoi(listIdStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: "error: field 'list_id' must be a valid integer",
+		})
+	}
+
+	id, err := server.EntryService.Insert(listId, text, category)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to create entry",
+		})
+	}
+	entry, err := server.EntryService.Get(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to load entry",
+		})
+	}
+	return c.JSON(http.StatusOK, Response{Success: true, Data: entry})
+}
+
+func (server *Server) UpdateEntry(c echo.Context) error {
+	_, success, err := verifySession(c, server)
+	if !success {
+		return err
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: fmt.Sprintf("error: path parameter '%s' must be a valid integer", idStr),
+		})
 	}
 
 	values, success, err := getFormValues(c, "text", "category")
@@ -86,40 +147,6 @@ func (server *Server) InsertEntry(c echo.Context) error {
 		return err
 	}
 	text, category := values[0], values[1]
-
-	_, err = server.EntryService.Insert(text, category)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{
-			Success: false,
-			Message: "error: failed to create entry",
-		})
-	}
-	entries, success, err := getAllEntries(server, c)
-	if !success {
-		return err
-	}
-	return c.JSON(http.StatusOK, Response{Success: true, Data: entries})
-}
-
-func (server *Server) UpdateEntry(c echo.Context) error {
-	success, err := verifySession(c, server)
-	if !success {
-		return err
-	}
-
-	values, success, err := getFormValues(c, "id", "text", "category")
-	if !success {
-		return err
-	}
-	idStr, text, category := values[0], values[1], values[2]
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, Response{
-			Success: false,
-			Message: "error: field 'id' must be a valid integer",
-		})
-	}
 
 	updated, err := server.EntryService.Update(id, text, category)
 	if err != nil {
@@ -134,34 +161,32 @@ func (server *Server) UpdateEntry(c echo.Context) error {
 			Message: fmt.Sprintf("error: entry %d does not exist", id),
 		})
 	}
-	entries, success, err := getAllEntries(server, c)
-	if !success {
-		return err
+	entry, err := server.EntryService.Get(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to load entry",
+		})
 	}
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: fmt.Sprintf("successfully updated entry %d", id),
-		Data:    entries,
+		Data:    entry,
 	})
 }
 
 func (server *Server) DeleteEntry(c echo.Context) error {
-	success, err := verifySession(c, server)
+	_, success, err := verifySession(c, server)
 	if !success {
 		return err
 	}
 
-	values, success, err := getFormValues(c, "id")
-	if !success {
-		return err
-	}
-	idStr := values[0]
-
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Response{
 			Success: false,
-			Message: "error: field 'id' must be a valid integer",
+			Message: fmt.Sprintf("error: path parameter '%s' must be a valid integer", idStr),
 		})
 	}
 
@@ -178,25 +203,16 @@ func (server *Server) DeleteEntry(c echo.Context) error {
 			Message: fmt.Sprintf("error: entry %d does not exist", id),
 		})
 	}
-	entries, success, err := getAllEntries(server, c)
-	if !success {
-		return err
+	entry, err := server.EntryService.Get(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to load entry",
+		})
 	}
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: fmt.Sprintf("successfully deleted entry %d", id),
-		Data:    entries,
+		Data:    entry,
 	})
-}
-
-func getAllEntries(server *Server, c echo.Context) (entries []Entry, success bool, err error) {
-	entries, err = server.EntryService.All()
-	if err != nil {
-		err = c.JSON(http.StatusInternalServerError, Response{
-			Success: false,
-			Message: "error: failed to load entries",
-		})
-		return entries, false, err
-	}
-	return entries, true, nil
 }

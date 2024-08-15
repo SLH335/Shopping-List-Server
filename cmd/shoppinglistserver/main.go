@@ -19,6 +19,9 @@ func main() {
 		AuthService: &sqlite.AuthService{
 			DB: db,
 		},
+		ListService: &sqlite.ListService{
+			DB: db,
+		},
 		EntryService: &sqlite.EntryService{
 			DB: db,
 		},
@@ -29,11 +32,17 @@ func main() {
 	e.POST("/auth/register", server.Register)
 	e.POST("/auth/login", server.Login)
 
-	e.GET("/entries", server.GetEntries)
-	e.POST("/entry/complete", server.CompleteEntry)
-	e.POST("/entry", server.InsertEntry)
-	e.PUT("/entry", server.UpdateEntry)
-	e.DELETE("/entry", server.DeleteEntry)
+	e.GET("/lists", server.GetLists)
+	e.POST("/list", server.AddList)
+	e.GET("/list/:id", server.GetEntries)
+	e.DELETE("/list/:id", server.DeleteList)
+	e.POST("/list/:id/join", server.JoinList)
+	e.POST("/list/:id/leave", server.LeaveList)
+
+	e.POST("/entry", server.AddEntry)
+	e.PUT("/entry/:id", server.UpdateEntry)
+	e.DELETE("/entry/:id", server.DeleteEntry)
+	e.POST("/entry/:id/complete", server.CompleteEntry)
 
 	e.Logger.Fatal(e.Start(":9001"))
 }

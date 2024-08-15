@@ -15,20 +15,25 @@ type AuthService struct {
 	DB *sql.DB
 }
 
-func (m *AuthService) Register(username, password string) (id int, err error) {
+func (m *AuthService) Register(username, password string) (user User, err error) {
 	passwordHash, err := hashPassword(password)
 	if err != nil {
-		return -1, err
+		return user, err
 	}
 
-	stmt := "INSERT INTO users (username, passwordHash) VALUES (?, ?)"
+	stmt := "INSERT INTO users (username, password_hash) VALUES (?, ?)"
 	res, err := m.DB.Exec(stmt, username, passwordHash)
 	if err != nil {
-		return -1, err
+		return user, err
 	}
 
 	lastInsertId, _ := res.LastInsertId()
-	return int(lastInsertId), nil
+	user = User{
+		Id:           int(lastInsertId),
+		Username:     username,
+		PasswordHash: passwordHash,
+	}
+	return user, nil
 }
 
 func (m *AuthService) Login(username, password string) (user User, err error) {
@@ -37,7 +42,6 @@ func (m *AuthService) Login(username, password string) (user User, err error) {
 
 	err = row.Scan(&user.Id, &user.Username, &user.PasswordHash)
 	if err != nil {
-		fmt.Println(err)
 		return user, err
 	}
 
@@ -51,11 +55,11 @@ func (m *AuthService) Login(username, password string) (user User, err error) {
 func (s *AuthService) NewSession(user User, validDays int) (token string, err error) {
 	token = generateSessionToken(64)
 	if validDays > 0 {
-		stmt := "INSERT INTO sessions (token, userId, createdAt, expiresAt) VALUES (?, ?, ?, ?)"
+		stmt := "INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)"
 		expiresAt := time.Now().Add(24 * time.Hour * time.Duration(validDays))
 		_, err = s.DB.Exec(stmt, token, user.Id, time.Now(), expiresAt)
 	} else {
-		stmt := "INSERT INTO sessions (token, userId, createdAt) VALUES (?, ?, ?)"
+		stmt := "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)"
 		_, err = s.DB.Exec(stmt, token, user.Id, time.Now())
 	}
 	if err != nil {
@@ -72,7 +76,7 @@ func (s *AuthService) VerifySession(token string) (user User, err error) {
 	stmt := `
 		SELECT users.*
 		FROM sessions
-		INNER JOIN users ON sessions.userId=users.id
+		INNER JOIN users ON sessions.user_id=users.id
 		WHERE sessions.token=?`
 	row := s.DB.QueryRow(stmt, token)
 	err = row.Scan(&user.Id, &user.Username, &user.PasswordHash)

@@ -10,9 +10,20 @@ type EntryService struct {
 	DB *sql.DB
 }
 
-func (m *EntryService) All() (entries []Entry, err error) {
-	stmt := "SELECT * FROM entries"
-	rows, err := m.DB.Query(stmt)
+func (m *EntryService) Get(id int) (entry Entry, err error) {
+	stmt := "SELECT * FROM entries WHERE id=?"
+	row := m.DB.QueryRow(stmt, id)
+
+	err = row.Scan(&entry.Id, &entry.ListId, &entry.Text, &entry.Category, &entry.Completed)
+	if err != nil {
+		return entry, err
+	}
+	return entry, nil
+}
+
+func (m *EntryService) All(listId int) (entries []Entry, err error) {
+	stmt := "SELECT * FROM entries WHERE list_id=?"
+	rows, err := m.DB.Query(stmt, listId)
 	if err != nil {
 		return entries, err
 	}
@@ -20,7 +31,7 @@ func (m *EntryService) All() (entries []Entry, err error) {
 
 	for rows.Next() {
 		var entry Entry
-		err = rows.Scan(&entry.Id, &entry.Text, &entry.Category, &entry.Completed)
+		err = rows.Scan(&entry.Id, &entry.ListId, &entry.Text, &entry.Category, &entry.Completed)
 		if err != nil {
 			return entries, err
 		}
@@ -45,9 +56,9 @@ func (m *EntryService) Complete(id int, completed bool) (updated bool, err error
 	return rowsAffected > 0, nil
 }
 
-func (m *EntryService) Insert(text, category string) (id int, err error) {
-	stmt := "INSERT INTO entries (text, category) VALUES (?, ?)"
-	res, err := m.DB.Exec(stmt, text, category)
+func (m *EntryService) Insert(listId int, text, category string) (id int, err error) {
+	stmt := "INSERT INTO entries (list_id, text, category) VALUES (?, ?, ?)"
+	res, err := m.DB.Exec(stmt, listId, text, category)
 	if err != nil {
 		return -1, err
 	}

@@ -14,7 +14,7 @@ func (server *Server) Register(c echo.Context) error {
 	}
 	username, password := values[0], values[1]
 
-	_, err = server.AuthService.Register(username, password)
+	user, err := server.AuthService.Register(username, password)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
@@ -22,9 +22,18 @@ func (server *Server) Register(c echo.Context) error {
 		})
 	}
 
+	token, err := server.AuthService.NewSession(user, 7)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to start new session",
+		})
+	}
+
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: "successfully registered user",
+		Data:    token,
 	})
 }
 
