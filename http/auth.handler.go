@@ -22,7 +22,7 @@ func (server *Server) Register(c echo.Context) error {
 		})
 	}
 
-	token, err := server.AuthService.NewSession(user, 7)
+	session, err := server.AuthService.NewSession(user, 7)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
@@ -33,7 +33,7 @@ func (server *Server) Register(c echo.Context) error {
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
 		Message: "successfully registered user",
-		Data:    token,
+		Data:    session,
 	})
 }
 
@@ -52,7 +52,7 @@ func (server *Server) Login(c echo.Context) error {
 		})
 	}
 
-	token, err := server.AuthService.NewSession(user, 7)
+	session, err := server.AuthService.NewSession(user, 7)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{
 			Success: false,
@@ -62,6 +62,6 @@ func (server *Server) Login(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, Response{
 		Success: true,
-		Data:    token,
+		Data:    session,
 	})
 }

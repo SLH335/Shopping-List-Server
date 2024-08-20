@@ -26,16 +26,41 @@ func (m *ListService) Get(id int) (list List, err error) {
 	return list, nil
 }
 
+func (m *ListService) Members(id int) (members []User, err error) {
+	stmt := `
+		SELECT users.id, users.username
+		FROM lists
+		INNER JOIN list_members ON lists.id=list_members.list_id
+		INNER JOIN users ON list_members.user_id=users.id
+		WHERE lists.id=?
+	`
+	rows, err := m.DB.Query(stmt, id)
+	if err != nil {
+		return []User{}, err
+	}
+
+	for rows.Next() {
+		var member User
+		err = rows.Scan(&member.Id, &member.Username)
+		members = append(members, member)
+	}
+	err = rows.Err()
+	if err != nil {
+		return members, err
+	}
+	return members, nil
+}
+
 func (m *ListService) All(userId int) (lists []List, err error) {
 	stmt := `
 		SELECT lists.id, lists.name, users.id, users.username
 		FROM lists
 		INNER JOIN list_members ON lists.id=list_members.list_id
 		INNER JOIN users ON lists.creator_id=users.id
-		WHERE users.id=?`
+		WHERE list_members.user_id=?`
 	rows, err := m.DB.Query(stmt, userId)
 	if err != nil {
-		return lists, err
+		return []List{}, err
 	}
 	defer rows.Close()
 

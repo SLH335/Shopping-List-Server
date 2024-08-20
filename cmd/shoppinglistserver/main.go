@@ -19,7 +19,13 @@ func main() {
 		AuthService: &sqlite.AuthService{
 			DB: db,
 		},
+		UserService: &sqlite.UserService{
+			DB: db,
+		},
 		ListService: &sqlite.ListService{
+			DB: db,
+		},
+		InvitationService: &sqlite.InvitationService{
 			DB: db,
 		},
 		EntryService: &sqlite.EntryService{
@@ -38,6 +44,12 @@ func main() {
 	e.DELETE("/list/:id", server.DeleteList)
 	e.POST("/list/:id/join", server.JoinList)
 	e.POST("/list/:id/leave", server.LeaveList)
+
+	e.GET("/invitations", server.GetInvitations)
+	e.POST("/invitation", server.Invite)
+	e.DELETE("/invitation", server.RevokeInvitation)
+	e.POST("/invitation/accept", server.AcceptInvitation)
+	e.POST("/invitation/decline", server.DeclineInvitation)
 
 	e.POST("/entry", server.AddEntry)
 	e.PUT("/entry/:id", server.UpdateEntry)

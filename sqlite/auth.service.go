@@ -1,14 +1,12 @@
 package sqlite
 
 import (
-	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
 	"fmt"
 	"time"
 
 	. "github.com/slh335/shoppinglistserver"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/slh335/shoppinglistserver/crypto"
 )
 
 type AuthService struct {
@@ -16,7 +14,7 @@ type AuthService struct {
 }
 
 func (m *AuthService) Register(username, password string) (user User, err error) {
-	passwordHash, err := hashPassword(password)
+	passwordHash, err := crypto.HashPassword(password)
 	if err != nil {
 		return user, err
 	}
@@ -45,28 +43,39 @@ func (m *AuthService) Login(username, password string) (user User, err error) {
 		return user, err
 	}
 
-	match := verifyPassword(password, user.PasswordHash)
+	match := crypto.VerifyPassword(password, user.PasswordHash)
 	if !match {
 		return user, fmt.Errorf("error: invalid password")
 	}
 	return user, nil
 }
 
-func (s *AuthService) NewSession(user User, validDays int) (token string, err error) {
-	token = generateSessionToken(64)
+func (s *AuthService) NewSession(user User, validDays int) (session Session, err error) {
+	token := crypto.GenerateToken(64)
+	createdAt := time.Now()
+	var expiresAt time.Time
+
 	if validDays > 0 {
 		stmt := "INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)"
-		expiresAt := time.Now().Add(24 * time.Hour * time.Duration(validDays))
-		_, err = s.DB.Exec(stmt, token, user.Id, time.Now(), expiresAt)
+		expiresAt = time.Now().Add(24 * time.Hour * time.Duration(validDays))
+		_, err = s.DB.Exec(stmt, token, user.Id, createdAt, expiresAt)
 	} else {
 		stmt := "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)"
-		_, err = s.DB.Exec(stmt, token, user.Id, time.Now())
+		_, err = s.DB.Exec(stmt, token, user.Id, createdAt)
 	}
 	if err != nil {
-		return "", err
+		return Session{}, err
 	}
 
-	return token, nil
+	return Session{
+		Token: token,
+		User: User{
+			Id:       user.Id,
+			Username: user.Username,
+		},
+		CreatedAt: createdAt,
+		ExpiresAt: expiresAt,
+	}, nil
 }
 
 func (s *AuthService) VerifySession(token string) (user User, err error) {
@@ -84,23 +93,4 @@ func (s *AuthService) VerifySession(token string) (user User, err error) {
 		return user, err
 	}
 	return user, nil
-}
-
-func generateSessionToken(length int) (token string) {
-	buf := make([]byte, length)
-	_, err := rand.Read(buf)
-	if err != nil {
-		return ""
-	}
-	return base64.RawURLEncoding.EncodeToString(buf)
-}
-
-func hashPassword(password string) (hash string, err error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
-func verifyPassword(password, hash string) (match bool) {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
