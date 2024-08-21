@@ -47,9 +47,9 @@ func main() {
 
 	e.GET("/invitations", server.GetInvitations)
 	e.POST("/invitation", server.Invite)
-	e.DELETE("/invitation", server.RevokeInvitation)
 	e.POST("/invitation/accept", server.AcceptInvitation)
 	e.POST("/invitation/decline", server.DeclineInvitation)
+	e.POST("/invitation/revoke", server.RevokeInvitation)
 
 	e.POST("/entry", server.AddEntry)
 	e.PUT("/entry/:id", server.UpdateEntry)

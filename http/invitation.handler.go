@@ -210,7 +210,7 @@ func (server *Server) RevokeInvitation(c echo.Context) error {
 		})
 	}
 
-	if invitation.Invitee.Id != inviter.Id {
+	if invitation.Inviter.Id != inviter.Id {
 		return c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Message: "error: only the inviter can revoke an invitation",
