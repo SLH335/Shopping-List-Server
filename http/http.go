@@ -49,7 +49,7 @@ func getFormValues(c echo.Context, keys ...string) (values []string, successs bo
 func verifySession(c echo.Context, server *Server) (user User, success bool, err error) {
 	sessionToken := strings.Replace(c.Request().Header.Get("Authorization"), "Bearer ", "", 1)
 
-	user, err = server.AuthService.VerifySession(sessionToken)
+	session, err := server.AuthService.VerifySession(sessionToken)
 	if err != nil {
 		err = c.JSON(http.StatusBadRequest, Response{
 			Success: false,
@@ -57,5 +57,5 @@ func verifySession(c echo.Context, server *Server) (user User, success bool, err
 		})
 		return User{}, false, err
 	}
-	return user, true, nil
+	return session.User, true, nil
 }

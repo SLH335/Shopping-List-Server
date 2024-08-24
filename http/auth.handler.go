@@ -65,3 +65,24 @@ func (server *Server) Login(c echo.Context) error {
 		Data:    session,
 	})
 }
+
+func (server *Server) VerifySession(c echo.Context) error {
+	values, success, err := getFormValues(c, "token")
+	if !success {
+		return err
+	}
+	token := values[0]
+
+	session, err := server.AuthService.VerifySession(token)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: token invalid",
+		})
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Success: true,
+		Data:    session,
+	})
+}

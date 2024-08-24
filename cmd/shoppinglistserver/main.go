@@ -37,6 +37,7 @@ func main() {
 
 	e.POST("/auth/register", server.Register)
 	e.POST("/auth/login", server.Login)
+	e.POST("/auth/verifysession", server.VerifySession)
 
 	e.GET("/lists", server.GetLists)
 	e.POST("/list", server.AddList)
@@ -56,5 +57,5 @@ func main() {
 	e.DELETE("/entry/:id", server.DeleteEntry)
 	e.POST("/entry/:id/complete", server.CompleteEntry)
 
-	e.Logger.Fatal(e.Start(":9001"))
+	e.Logger.Fatal(e.Start(":9000"))
 }
