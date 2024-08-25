@@ -2,7 +2,7 @@
 tmp/
 
 # Database
-app.db
+*.db
 
 # Env file
 .env
