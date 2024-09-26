@@ -56,6 +56,7 @@ func main() {
 	e.PUT("/entry/:id", server.UpdateEntry)
 	e.DELETE("/entry/:id", server.DeleteEntry)
 	e.POST("/entry/:id/complete", server.CompleteEntry)
+	e.POST("/entry/move", server.MoveEntry)
 
 	e.Logger.Fatal(e.Start(":9000"))
 }

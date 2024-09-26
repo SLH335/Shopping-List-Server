@@ -13,12 +13,13 @@ type List struct {
 }
 
 type Entry struct {
-	Id        int       `json:"id"`
-	ListId    int       `json:"listId"`
-	Text      string    `json:"text"`
-	Category  string    `json:"category"`
-	Completed bool      `json:"completed"`
-	CreatedAt time.Time `json:"createdAt"`
+	Id         int       `json:"id"`
+	ListId     int       `json:"listId"`
+	Text       string    `json:"text"`
+	Category   string    `json:"category"`
+	OrderIndex int       `json:"orderIndex"`
+	Completed  bool      `json:"completed"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 type User struct {

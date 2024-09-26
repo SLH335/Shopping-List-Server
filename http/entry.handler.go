@@ -91,6 +91,61 @@ func (server *Server) CompleteEntry(c echo.Context) error {
 	})
 }
 
+func (server *Server) MoveEntry(c echo.Context) error {
+	_, success, err := verifySession(c, server)
+	if !success {
+		return err
+	}
+
+	values, success, err := getFormValues(c, "list_id", "category", "old_index", "new_index")
+	if !success {
+		return err
+	}
+	listIdStr, category, oldIndexStr, newIndexStr := values[0], values[1], values[2], values[3]
+	listId, err := strconv.Atoi(listIdStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: "error: field 'list_id' must be a valid integer",
+		})
+	}
+	oldIndex, err := strconv.Atoi(oldIndexStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: "error: field 'old_index' must be a valid integer",
+		})
+	}
+	newIndex, err := strconv.Atoi(newIndexStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Message: "error: field 'new_index' must be a valid integer",
+		})
+	}
+
+	updated, err := server.EntryService.Move(listId, category, oldIndex, newIndex)
+	if err != nil || !updated {
+		fmt.Println(updated, err)
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to move entry",
+		})
+	}
+	entries, err := server.EntryService.All(listId)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{
+			Success: false,
+			Message: "error: failed to load entries",
+		})
+	}
+	return c.JSON(http.StatusOK, Response{
+		Success: true,
+		Message: "successfully moved entry",
+		Data:    entries,
+	})
+}
+
 func (server *Server) AddEntry(c echo.Context) error {
 	_, success, err := verifySession(c, server)
 	if !success {
